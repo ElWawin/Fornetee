@@ -17,12 +17,13 @@
       border: none; border-radius: 5px; background: #0f0; color: #000;
       cursor: pointer;
     }
-    .character-img {
-      width: 80px; height: 80px; margin: 10px;
-      border: 3px solid transparent; border-radius: 10px;
+    .character-box {
+      width: 80px; height: 80px; margin: 10px; border-radius: 10px;
+      background-color: #f00; display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 18px; font-weight: bold; cursor: pointer;
     }
     .selected {
-      border-color: #0f0;
+      border: 3px solid #0f0;
     }
     #mobileControls {
       position: absolute; bottom: 20px; width: 100%;
@@ -46,10 +47,10 @@
   <div id="characterMenu" style="display: none;">
     <h2 style="color:white;">Elige tu personaje</h2>
     <div id="characters">
-      <!-- Asegúrate de que las imágenes existan y sean accesibles -->
-      <img src="https://i.imgur.com/dXbWjnd.png" class="character-img" onclick="selectCharacter(0)">
-      <img src="https://i.imgur.com/FyXc5UR.png" class="character-img" onclick="selectCharacter(1)">
-      <img src="https://i.imgur.com/CaZsW0G.png" class="character-img" onclick="selectCharacter(2)">
+      <!-- Representación de los personajes con cajas de colores -->
+      <div class="character-box" onclick="selectCharacter(0)">Personaje 1</div>
+      <div class="character-box" onclick="selectCharacter(1)">Personaje 2</div>
+      <div class="character-box" onclick="selectCharacter(2)">Personaje 3</div>
     </div>
     <button class="btn" onclick="startGame()">Jugar</button>
   </div>
@@ -65,11 +66,6 @@
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
   <script>
     let selectedSkin = 0;
-    const skins = [
-      'https://i.imgur.com/dXbWjnd.png', // Personaje 1
-      'https://i.imgur.com/FyXc5UR.png', // Personaje 2
-      'https://i.imgur.com/CaZsW0G.png'  // Personaje 3
-    ];
 
     function showCharacterMenu() {
       document.getElementById('startMenu').style.display = 'none';
@@ -78,8 +74,8 @@
 
     function selectCharacter(index) {
       selectedSkin = index;
-      document.querySelectorAll('.character-img').forEach((img, i) => {
-        img.classList.toggle('selected', i === index);
+      document.querySelectorAll('.character-box').forEach((box, i) => {
+        box.classList.toggle('selected', i === index);
       });
     }
 
@@ -111,7 +107,6 @@
       let player, cursors, bullets, lastFired = 0, enemies, score = 0, scoreText;
 
       function preload() {
-        this.load.image('player', skins[selectedSkin]);
         this.load.image('bullet', 'https://i.imgur.com/IKD8n26.png');
         this.load.image('enemy', 'https://i.imgur.com/OdL0XPt.png');
         this.load.image('background', 'https://i.imgur.com/XUw5k09.jpg'); // Fondo
@@ -121,7 +116,7 @@
 
       function create() {
         // Fondo de mapa
-        this.add.image(400, 300, 'background').setScrollFactor(0.5);
+        this.add.rectangle(400, 300, 800, 600, 0x0000FF);  // Fondo representado por un rectángulo azul
 
         this.cameras.main.setBounds(0, 0, 1600, 600);  // Limitar la cámara al mapa
         cursors = this.input.keyboard.createCursorKeys();
@@ -129,7 +124,7 @@
         enemies = this.physics.add.group();
         scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '24px', fill: '#0f0' });
 
-        player = this.physics.add.sprite(100, 500, 'player').setScale(0.4);
+        player = this.physics.add.rectangle(100, 500, 40, 40, 0xff0000);  // Representación del jugador con un rectángulo rojo
         player.setCollideWorldBounds(true);
 
         this.fireSound = this.sound.add('fire');
