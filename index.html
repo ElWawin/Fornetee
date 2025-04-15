@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wawin Royale</title>
   <style>
     body { margin: 0; background: #000; }
@@ -64,9 +65,9 @@
   <script>
     let selectedSkin = 0;
     const skins = [
-      'https://i.imgur.com/6o5VfTG.png',
-      'https://i.imgur.com/XLk9tE7.png',
-      'https://i.imgur.com/CaZsW0G.png'
+      'https://i.imgur.com/6o5VfTG.png', // Personaje 1
+      'https://i.imgur.com/XLk9tE7.png', // Personaje 2
+      'https://i.imgur.com/CaZsW0G.png'  // Personaje 3
     ];
 
     function showCharacterMenu() {
@@ -112,12 +113,16 @@
         this.load.image('player', skins[selectedSkin]);
         this.load.image('bullet', 'https://i.imgur.com/IKD8n26.png');
         this.load.image('enemy', 'https://i.imgur.com/OdL0XPt.png');
+        this.load.image('background', 'https://i.imgur.com/XUw5k09.jpg'); // Fondo
         this.load.audio('fire', 'https://cdn.pixabay.com/audio/2022/03/15/audio_d46c807a0c.mp3');
         this.load.audio('jump', 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_d6fda5a62e.mp3?filename=jump-14465.mp3');
       }
 
       function create() {
-        this.cameras.main.setBackgroundColor('#222');
+        // Fondo de mapa
+        this.add.image(400, 300, 'background').setScrollFactor(0.5);
+
+        this.cameras.main.setBounds(0, 0, 1600, 600);  // Limitar la cámara al mapa
         cursors = this.input.keyboard.createCursorKeys();
         bullets = this.physics.add.group();
         enemies = this.physics.add.group();
