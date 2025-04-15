@@ -1,136 +1,171 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Mini Fortnite Pro</title>
+  <meta charset="UTF-8">
+  <title>Wawin Royale</title>
   <style>
-    body {
-      margin: 0;
-      background: black;
-      overflow: hidden;
+    body { margin: 0; background: #000; }
+    canvas { display: block; margin: 0 auto; }
+    #startMenu, #characterMenu {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; background: rgba(0, 0, 0, 0.9); z-index: 2;
+    }
+    .btn {
+      padding: 15px 30px; margin: 10px; font-size: 20px;
+      border: none; border-radius: 5px; background: #0f0; color: #000;
+      cursor: pointer;
+    }
+    .character-img {
+      width: 80px; height: 80px; margin: 10px;
+      border: 3px solid transparent; border-radius: 10px;
+    }
+    .selected {
+      border-color: #0f0;
+    }
+    #mobileControls {
+      position: absolute; bottom: 20px; width: 100%;
+      display: flex; justify-content: space-around;
+    }
+    .mobile-btn {
+      width: 60px; height: 60px; font-size: 30px;
+      background: rgba(255,255,255,0.3); border: none;
+      border-radius: 50%; color: white;
     }
   </style>
 </head>
 <body>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <!-- Menú de inicio -->
+  <div id="startMenu">
+    <h1 style="color:white;">WAWIN ROYALE</h1>
+    <button class="btn" onclick="showCharacterMenu()">Comenzar</button>
+  </div>
+
+  <!-- Selector de personaje -->
+  <div id="characterMenu" style="display: none;">
+    <h2 style="color:white;">Elige tu personaje</h2>
+    <div id="characters">
+      <img src="https://i.imgur.com/6o5VfTG.png" class="character-img" onclick="selectCharacter(0)">
+      <img src="https://i.imgur.com/XLk9tE7.png" class="character-img" onclick="selectCharacter(1)">
+      <img src="https://i.imgur.com/CaZsW0G.png" class="character-img" onclick="selectCharacter(2)">
+    </div>
+    <button class="btn" onclick="startGame()">Jugar</button>
+  </div>
+
+  <!-- Controles móviles -->
+  <div id="mobileControls" style="display: none;">
+    <button class="mobile-btn" ontouchstart="left=true" ontouchend="left=false">←</button>
+    <button class="mobile-btn" ontouchstart="jump=true" ontouchend="jump=false">↑</button>
+    <button class="mobile-btn" ontouchstart="right=true" ontouchend="right=false">→</button>
+    <button class="mobile-btn" ontouchstart="shoot=true" ontouchend="shoot=false">★</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
   <script>
-    const config = {
-      type: Phaser.AUTO,
-      width: 800,
-      height: 600,
-      physics: {
-        default: 'arcade',
-        arcade: {
-          gravity: { y: 500 },
-          debug: false
-        }
-      },
-      scene: {
-        preload: preload,
-        create: create,
-        update: update
-      }
-    };
+    let selectedSkin = 0;
+    const skins = [
+      'https://i.imgur.com/6o5VfTG.png',
+      'https://i.imgur.com/XLk9tE7.png',
+      'https://i.imgur.com/CaZsW0G.png'
+    ];
 
-    let player;
-    let cursors;
-    let bullets;
-    let lastFired = 0;
-    let enemies;
-    let score = 0;
-    let scoreText;
-    let shopText;
-    let music;
-    let fireSound;
-    let jumpSound;
-
-    const game = new Phaser.Game(config);
-
-    function preload() {
-      // Imágenes embebidas en Base64
-      this.textures.addBase64('player', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB4UlEQVR4nO2a0Y2DMAyFb0AfYPf/X2A7ECtV3LFLdnJgk+eOG2N+ZzmXYKSkhISEhISEhISEhISEhISEhISEhISEhIRGVHAAeBM+qbA3zgPYfRQA0gR1go8+U0Hdo+8WgB7gIzDwe++H0EpBb7AtISkP6v8HZrA36+UgDsCv4FdFJg3ryJgOgDYuQKQMQfy7glkDaP0KpZJ+kL0XgfUbaF9+icCCkMe9AtIvkNQCgSkA6wXUKeSbByrINfVwGcCBHfHmtxUgCWkycPYrTWKwUKJ6Z7XqVvR0dpEGFrwDKBD2UAcNs94HgNp9IfG9tKeAaRb20n4FzCrgW9oRvwPE3S3yo1jzfwKZVjHoJ4K2cNw+UkGphsl2tRE3BG8n4PqO1HRu+OpPz+t0lTQ0MjIyMjIyMjIyMjIyMjIyMjIyMjIyMtKf8AGCvDqlcbkAsAAAAASUVORK5CYII=');
-      this.textures.addBase64('bullet', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABrklEQVRYR+2X0Q2DMBBF7wx9gbsB3sAfcAdyA9yAO6AHsAdzADdoUix0VqpdKXQPhY4A+64J6Tn6dPYf7ykSIEQmK6l2BAUMDgBVmAH1AKdyAYfgHMn0wYUAU7J8NydkFBWDG+SRvfwDKVyy4KHt6N9W9x9XvX1KZXg4uoE5oAnJDQm0OwB/ALCqCCqVh1qbG1q5zz/gkMsn5mHIKbC+i6TRyi4NYBfMEssUAVmgCnHMQGkJMSFQA50gtEvAGLwE9eIR/ONvwDQxzXcUjUvGCzSS7Q50FbF4CZ+B8cJ3FzQAAFdTXcDqZAVJ3KyPQHVw2WS6AJgKSkhISEhISEhISEhISEhISEhISEhISEhLfATcqIUlC8mLnQAAAABJRU5ErkJggg==');
-
-      // Imagen enemiga y sonidos
-      this.load.image('enemy', 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Red_square.svg/64px-Red_square.svg.png');
-      this.load.audio('bgMusic', 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_d46c807a0c.mp3?filename=battle-royale-theme-115894.mp3');
-      this.load.audio('fire', 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_2c07e82d67.mp3?filename=laser-shoot-81267.mp3');
-      this.load.audio('jump', 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_d6fda5a62e.mp3?filename=jump-14465.mp3');
+    function showCharacterMenu() {
+      document.getElementById('startMenu').style.display = 'none';
+      document.getElementById('characterMenu').style.display = 'flex';
     }
 
-    function create() {
-      music = this.sound.add('bgMusic', { loop: true });
-      music.play();
-
-      fireSound = this.sound.add('fire');
-      jumpSound = this.sound.add('jump');
-
-      player = this.physics.add.sprite(100, 450, 'player');
-      player.setScale(0.2);
-      player.setCollideWorldBounds(true);
-
-      bullets = this.physics.add.group();
-      enemies = this.physics.add.group();
-      cursors = this.input.keyboard.createCursorKeys();
-
-      this.input.keyboard.on('keydown-SPACE', () => {
-        if (this.time.now > lastFired) {
-          const bullet = bullets.create(player.x + 20, player.y, 'bullet');
-          bullet.setScale(0.05);
-          bullet.setVelocityX(500);
-          bullet.setGravityY(-500);
-          fireSound.play();
-          lastFired = this.time.now + 300;
-        }
-      });
-
-      scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '24px', fill: '#fff' });
-      shopText = this.add.text(600, 16, 'SHOP: +Speed [S]', { fontSize: '20px', fill: '#0f0' });
-
-      this.physics.add.overlap(bullets, enemies, hitEnemy, null, this);
-
-      this.time.addEvent({
-        delay: 3000,
-        callback: spawnEnemy,
-        callbackScope: this,
-        loop: true
+    function selectCharacter(index) {
+      selectedSkin = index;
+      document.querySelectorAll('.character-img').forEach((img, i) => {
+        img.classList.toggle('selected', i === index);
       });
     }
 
-    function update() {
-      if (cursors.left.isDown) {
-        player.setVelocityX(-160);
-      } else if (cursors.right.isDown) {
-        player.setVelocityX(160);
-      } else {
-        player.setVelocityX(0);
+    function startGame() {
+      document.getElementById('characterMenu').style.display = 'none';
+      document.getElementById('mobileControls').style.display = 'flex';
+      startPhaserGame();
+    }
+
+    let left = false, right = false, jump = false, shoot = false;
+
+    function startPhaserGame() {
+      const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        physics: {
+          default: 'arcade',
+          arcade: { gravity: { y: 600 }, debug: false }
+        },
+        scene: {
+          preload,
+          create,
+          update
+        }
+      };
+
+      const game = new Phaser.Game(config);
+      let player, cursors, bullets, lastFired = 0, enemies, score = 0, scoreText;
+
+      function preload() {
+        this.load.image('player', skins[selectedSkin]);
+        this.load.image('bullet', 'https://i.imgur.com/IKD8n26.png');
+        this.load.image('enemy', 'https://i.imgur.com/OdL0XPt.png');
+        this.load.audio('fire', 'https://cdn.pixabay.com/audio/2022/03/15/audio_d46c807a0c.mp3');
+        this.load.audio('jump', 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_d6fda5a62e.mp3?filename=jump-14465.mp3');
       }
 
-      if (cursors.up.isDown && player.body.touching.down) {
-        player.setVelocityY(-350);
-        jumpSound.play();
-      }
+      function create() {
+        this.cameras.main.setBackgroundColor('#222');
+        cursors = this.input.keyboard.createCursorKeys();
+        bullets = this.physics.add.group();
+        enemies = this.physics.add.group();
+        scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '24px', fill: '#0f0' });
 
-      if (this.input.keyboard.checkDown(this.input.keyboard.addKey('S'), 500)) {
-        if (score >= 10) {
-          score -= 10;
-          player.setVelocityX(player.body.velocity.x * 1.5);
+        player = this.physics.add.sprite(100, 500, 'player').setScale(0.4);
+        player.setCollideWorldBounds(true);
+
+        this.fireSound = this.sound.add('fire');
+        this.jumpSound = this.sound.add('jump');
+
+        this.time.addEvent({
+          delay: 2000,
+          loop: true,
+          callback: () => {
+            const e = enemies.create(800, 520, 'enemy').setScale(0.4);
+            e.setVelocityX(-100);
+          }
+        });
+
+        this.physics.add.overlap(bullets, enemies, (b, e) => {
+          b.destroy(); e.destroy(); score += 10;
           scoreText.setText('Score: ' + score);
+        });
+      }
+
+      function update(time) {
+        const isLeft = left || cursors.left.isDown;
+        const isRight = right || cursors.right.isDown;
+        const isJump = jump || cursors.up.isDown;
+        const isShoot = shoot || this.input.keyboard.checkDown(cursors.space, 250);
+
+        if (isLeft) player.setVelocityX(-160);
+        else if (isRight) player.setVelocityX(160);
+        else player.setVelocityX(0);
+
+        if (isJump && player.body.touching.down) {
+          player.setVelocityY(-400);
+          this.jumpSound.play();
+        }
+
+        if (isShoot && time > lastFired) {
+          const b = bullets.create(player.x + 20, player.y, 'bullet');
+          b.setVelocityX(500);
+          this.fireSound.play();
+          lastFired = time + 300;
         }
       }
-    }
-
-    function spawnEnemy() {
-      const enemy = enemies.create(800, 500, 'enemy');
-      enemy.setScale(0.5);
-      enemy.setVelocityX(-100);
-    }
-
-    function hitEnemy(bullet, enemy) {
-      bullet.destroy();
-      enemy.destroy();
-      score += 5;
-      scoreText.setText('Score: ' + score);
     }
   </script>
 </body>
